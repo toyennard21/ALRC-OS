@@ -1,4 +1,4 @@
-# ALRCOS  (Modified DesktopOnCodespaces)
+# ALRC OS  (Modified DesktopOnCodespaces)
 ### anknowledgements
 since @blobbyboi doesn't update blobeVM, I had to make this VM
 ### installation
