@@ -12,11 +12,11 @@ def savejson(json):
 #####################
 
 Head="""
-# BlobeVM Installer
+# ALRC OS Installer
 
-> BlobeVM (Powered by DesktopOnCodespaces)
+> thank you for using ALRC OS
 
-BlobeVM is a Virtual Machine that...
+ALRC OS is a Virtual Machine that...
 * Runs entirely in a web browser
 * Is unblocked
 * Has Windows app support
@@ -26,7 +26,7 @@ BlobeVM is a Virtual Machine that...
 * Is very fast
 """
 InstallHead="""
-# BlobeVM Installer
+# ALRC OS Installer
 """     
 
 LINES = ["KDE Plasma (Heavy)", "XFCE4 (Lightweight)", "I3 (Very Lightweight)", "GNOME 42 (Very Heavy)", "Cinnamon", "LXQT"]
