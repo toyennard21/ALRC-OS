@@ -10,7 +10,7 @@ sudo apt-get install -y wget curl jq xfce4 xfce4-goodies dbus-x11 ssl-cert chrom
 echo "=== [2/5] Downloading and Installing Latest KasmVNC ==="
 # Fetch latest stable debian package architecture amd64 matching current Ubuntu version (usually Jammy/Noble)
 # To remain robust, we grab the latest Ubuntu package from GitHub releases via API
-KASMVNC_URL=$(curl -s https://api.github.com/repos/kasmtech/KasmVNC/releases/latest | jq -r '.assets[] | select(.name | contains("ubuntu-noble_amd64.deb") or contains("ubuntu-jammy_amd64.deb")) | .browser_download_url' | head -n 1)
+KASMVNC_URL=$(curl -s https://api.github.com/repos/kasmtech/KasmVNC/releases/latest | jq -r '.assets[] | select(.name | contains("ubuntu-noble_amd64.deb") or contains("ubuntu-jammy_amd64.deb")) | .url' | head -1)
 
 if [ -z "$KASMVNC_URL" ] || [ "$KASMVNC_URL" == "null" ]; then
     echo "Falling back to hardcoded stable KasmVNC URL..."
