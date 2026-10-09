@@ -1,67 +1,136 @@
-#!/bin/bash
-# Fixed and optimized ALRCVM / BlobeVM Installer for GitHub Codespaces using KasmVNC
+from __future__ import annotations
 
-set -e
+import json
+from typing import Any
 
-echo "=== [1/5] Updating Packages & Core Dependencies ==="
-sudo apt-get update -y
-sudo apt-get install -y wget curl jq xfce4 xfce4-goodies dbus-x11 ssl-cert chromium-browser mesa-utils
+from textual.app import App, ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.screen import Screen
+from textual.widgets import Header, SelectionList, Label, Button, Markdown, Select
 
-echo "=== [2/5] Downloading and Installing Latest KasmVNC ==="
-# Fetch latest stable debian package architecture amd64 matching current Ubuntu version (usually Jammy/Noble)
-# To remain robust, we grab the latest Ubuntu package from GitHub releases via API
-KASMVNC_URL=$(curl -s https://api.github.com/repos/kasmtech/KasmVNC/releases/latest | jq -r '.assets[] | select(.name | contains("ubuntu-noble_amd64.deb") or contains("ubuntu-jammy_amd64.deb")) | .url' | head -1)
 
-if [ -z "$KASMVNC_URL" ] || [ "$KASMVNC_URL" == "null" ]; then
-    echo "Falling back to hardcoded stable KasmVNC URL..."
-    KASMVNC_URL="https://github.com/kasmtech/KasmVNC/releases/download/v1.3.3/kasmvncserver_noble_1.3.3_amd64.deb"
-fi
+### JSON Exporter ###
 
-wget -O kasmvnc.deb "$KASMVNC_URL"
-sudo apt-get install -y ./kasmvnc.deb || sudo apt-get install -f -y
+def savejson(data: dict[str, Any]) -> None:
+    with open("options.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
 
-echo "=== [3/5] Assigning User Groups ==="
-# KasmVNC requires the user to belong to the kasmvnc-cert group
-sudo usermod -aG kasmvnc-cert $USER || true
-sudo usermod -aG ssl-cert $USER || true
 
-echo "=== [4/5] Configuring KasmVNC & XFCE Backend ==="
-mkdir -p ~/.vnc
+#####################
 
-# Set up the VNC startup script to drop directly into XFCE
-cat << 'EOF' > ~/.vnc/xstartup
-#!/bin/sh
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-export XDG_CURRENT_DESKTOP="XFCE"
-export XDG_SESSION_DESKTOP="xfce"
-export DISPLAY=:1
-exec startxfce4
-EOF
-chmod +x ~/.vnc/xstartup
+Head = """
+# ALRC OS Installer
 
-# Pre-generate KasmVNC user profile configuration avoiding standard manual prompt roadblocks
-mkdir -p ~/.kasmentry || true
-# Configure YAML default setup or generic configuration overrides if required by vncserver setup
-# KasmVNC uses a central yaml file for runtime arguments. Let's make sure it defaults smoothly.
-mkdir -p ~/.vnc
-cat << 'EOF' > ~/.vnc/kasmvnc.yaml
-network:
-  protocol: http
-  interface: 0.0.0.0
-  websocket_port: 8443
-  use_ipv4: true
-  use_ipv6: false
-ssl:
-  require_ssl: false
-security:
-  brute_force_protection:
-    blacklist_threshold: 0
-EOF
+> thank you for using ALRC OS
 
-echo "=== [5/5] Installation Complete! ==="
-echo ""
-echo "To initialize your virtual machine environment, execute the following command:"
-echo "    vncserver -select-de xfce"
-echo ""
-echo "Note: Ensure you change visibility of Port 8443 to 'Public' under your Codespaces configuration panel!"
+ALRC OS is a Virtual Machine that...
+* Runs entirely in a web browser
+* Is unblocked
+* Has Windows app support
+* Has audio support
+* Can run games with almost no lag
+* Can Bypass School Network
+* Is very fast
+"""
+
+InstallHead = """
+# ALRC OS Installer
+"""
+
+LINES = [
+    "KDE Plasma (Heavy)",
+    "XFCE4 (Lightweight)",
+    "I3 (Very Lightweight)",
+    "GNOME 42 (Very Heavy)",
+    "Cinnamon",
+    "LXQT",
+]
+
+
+class InstallScreen(Screen):
+    CSS_PATH = "installer.tcss"
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Markdown(InstallHead)
+        yield Horizontal(
+            Vertical(
+                Label("Default Apps (you should keep them)"),
+                SelectionList[int](
+                    ("Wine", 0, True),
+                    ("Chrome", 1, True),
+                    ("Xarchiver", 2, True),
+                    ("Discord", 3, True),
+                    ("Steam", 4, True),
+                    ("Minecraft", 5, True),
+                    id="defaultapps",
+                ),
+            ),
+            Vertical(
+                Label("Programming"),
+                SelectionList[int](
+                    ("OpenJDK 8 (jre)", 0),
+                    ("OpenJDK 17 (jre)", 1),
+                    ("VSCodium", 2),
+                    id="programming",
+                ),
+            ),
+            Vertical(
+                Label("Apps"),
+                SelectionList[int](
+                    ("VLC", 0),
+                    ("LibreOffice", 1),
+                    ("Synaptic", 2),
+                    ("AQemu (VMs)", 3),
+                    ("TLauncher", 4),
+                    id="apps",
+                ),
+            ),
+        )
+
+        yield Vertical(
+            Horizontal(
+                Label("Desktop Environment:"),
+                Select(
+                    id="de",
+                    value="KDE Plasma (Heavy)",
+                    options=[(line, line) for line in LINES],
+                ),
+            )
+        )
+        yield Horizontal(
+            Button.error("Back", id="back"),
+            Button.warning("Install NOW", id="in"),
+        )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "back":
+            self.app.pop_screen()
+        elif event.button.id == "in":
+            data = {
+                "defaultapps": sorted(self.query_one("#defaultapps").selected),
+                "programming": sorted(self.query_one("#programming").selected),
+                "apps": sorted(self.query_one("#apps").selected),
+                "enablekvm": True,
+                "DE": self.query_one("#de").value,
+            }
+            savejson(data)
+            self.app.exit()
+
+
+class InstallApp(App):
+    CSS_PATH = "installer.tcss"
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Markdown(Head)
+        yield Vertical(Button.success("Install", id="install"))
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "install":
+            self.push_screen(InstallScreen())
+
+
+if __name__ == "__main__":
+    app = InstallApp()
+    app.run()
