@@ -6,14 +6,13 @@ ARG VERSION
 LABEL build_version="[Mollomm1 Mod] Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="mollomm1"
 
+FROM ghcr.io/linuxserver/baseimage-kasmvnc:ubuntujammy
+
 ARG DEBIAN_FRONTEND="noninteractive"
 
-# prevent Ubuntu's firefox stub from being installed
-COPY /root/etc/apt/preferences.d/firefox-no-snap /etc/apt/preferences.d/firefox-no-snap
-
+COPY root/etc/apt/preferences.d/firefox-no-snap /etc/apt/preferences.d/firefox-no-snap
 COPY options.json /
-
-COPY /root/ /
+COPY root/ /
 
 RUN \
   echo "**** install packages ****" && \
